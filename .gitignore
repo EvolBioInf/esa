@@ -1,0 +1,11 @@
+*.go
+doc/*.aux
+doc/*.dvi
+doc/*.log
+doc/*.pdf
+doc/*.toc
+doc/*.bbl
+doc/*.blg
+doc/esaDoc.ps
+doc/esa.tex
+experiments

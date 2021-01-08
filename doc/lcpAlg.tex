@@ -1,0 +1,21 @@
+    \REQUIRE $t$ \COMMENT{the text}
+    \REQUIRE $n$ \COMMENT{length of $t$}
+    \REQUIRE $\mathrm{sa}$ \COMMENT{suffix array}
+\ENSURE $\mathrm{lcp}$ \COMMENT{array of lengths of longest common prefixes}
+\FOR{$i\leftarrow 1$ to $n$} 
+   \STATE{$\mathrm{isa}[\mathrm{sa}[i]]\leftarrow i$} \COMMENT{construct inverse $\mathrm{sa}$}
+\ENDFOR
+\STATE{$\mathrm{lcp}[1]\leftarrow -1$} \COMMENT{initialize $\mathrm{lcp}$}
+\STATE{$\ell\leftarrow 0$}
+\FOR{$i\leftarrow 1$ to $n$}
+   \STATE{$j\leftarrow\mathrm{isa}[i]$}
+   \IF{$j > 1$}
+      \STATE{$k\leftarrow\mathrm{sa}[j-1]$}\COMMENT{$tT[k..]$ is
+        left-neighbor of $t[i..]$ in $\mathrm{sa}$}
+      \WHILE{$t[k+\ell] = t[i+\ell]$}
+         \STATE{$\ell\leftarrow \ell+1$}
+      \ENDWHILE
+      \STATE{$\mathrm{lcp}[j]\leftarrow \ell$}
+      \STATE{$\ell\leftarrow\max(\ell-1,0)$} \COMMENT{$\ell$ cannot become negative}
+   \ENDIF
+\ENDFOR

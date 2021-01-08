@@ -1,0 +1,349 @@
+#+begin_src latex
+  \section{Introduction}
+  Consider the text $t=\texttt{abracadabra}$ and think for a moment of
+  sorcerers, or the eponymous song by the Steve Miller band. For it is
+  almost magical what we can do when we rearrange $t$. For example,
+  let's search it for a pattern like $p=\texttt{abra}$. You might think
+  that in the best case this takes time proportional to the length of
+  $t$. But it is possible to search in time proportional to the length
+  of $p$. If $t$ is the human genome with its 3.2 billion nucleotides
+  and $p$ is a PCR primer of 20 nucleotides, searching in time
+  proportional to the length of $p$ rather than $t$ might make a huge
+  difference. The data structure that makes this feat possible is
+  called a \emph{suffix tree}~\cite{gus97:alg}. Its simpler sibling is
+  the \emph{suffix array}, which starts from the suffixes of $t$ listed
+  in Table~\ref{tab:suf}.
+  \begin{table}
+    \caption{The suffixes of text $t=\texttt{abracadabra}$.}\label{tab:suf}
+    \begin{center}
+      \begin{tabular}{cl}
+	\hline
+	$i$ & $\mbox{suf}[i]$\\\hline
+	\input{suf}\hline
+      \end{tabular}
+    \end{center}
+  \end{table}
+  By sorting them alphabetically, we obtain the suffix array of $t$,
+  $\mbox{sa}$, in Table~\ref{tab:sa}. Strictly speaking, a suffix array
+  only consists of the array of starting positions, but explicit
+  suffixes are easier to think about than their mere starting positions,
+  hence the three columns in Table~\ref{tab:sa}.
+  \begin{table}
+    \caption{Suffix array, $\mbox{sa}$, of $t=\texttt{abracadabra}$.}\label{tab:sa}
+    \begin{center}
+      \begin{tabular}{ccl}
+	\hline
+	$i$ & $\mbox{sa}[i]$ & $\mbox{suf}[i]$\\\hline
+	\input{sa}\hline
+      \end{tabular}
+    \end{center}
+  \end{table}
+
+  In the suffix array, some neighboring suffixes have matching
+  prefixes. For example, the first suffix, $\mbox{sa}[1]=\texttt{a}$
+  matches the first position of its successor,
+  $\mbox{sa}[2]=\texttt{abra}$, which in turn matches the first four
+  positions of its successor, $\mbox{sa}[3]=\texttt{abracadabra}$. The
+  lengths of these common prefixes, also known as the \emph{longest
+    common prefix}, $\mbox{lcp}$, is added to the suffix array in
+  Table~\ref{tab:esa}. The longest common prefix array is said to
+  \emph{enhance} the underlying suffix array, because the combination of
+  suffix array and $\mbox{lcp}$ array can be used to implement suffix trees
+  with their near magical search properties~\cite{abo02:enh}.
+  \begin{table}
+    \caption{Enhanced suffix array of $t=\texttt{abracadabra}$.}\label{tab:esa}
+    \begin{center}
+      \begin{tabular}{cccl}
+	\hline
+	$i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{suf}[i]$\\\hline
+	\input{esaTab}\hline
+      \end{tabular}
+    \end{center}
+  \end{table}
+  !Package \texttt{esa} provides functionsf or the computation of
+  !suffix arrays and related data structures. It is based on Yuta Mori's
+  !highly optimized divsufsort library published at
+  !\texttt{https://github.com/y-256/libdivsufsort}
+  \section{Implementation}
+  The divsufsort library is written in C, so our package outline
+  contains hooks for bridging the gap between Go and C, as well as for
+  imports and functions.
+#+end_src
+#+begin_src go <<esa.go>>=
+  package esa
+  //<<Bridge to C>>
+  import (
+	  //<<Imports>>
+  )
+  //<<Functions>>
+#+end_src
+#+begin_src latex
+  The bridge to C consists of three elements, \texttt{cgo} instructions,
+  includes, and the import of package \texttt{C}. As explained in
+  \cite[p. 361ff]{don16:go}, the \texttt{cgo} instructions and the
+  includes are commented out, while the import of \texttt{C} is regular
+  Go code.
+#+end_src
+#+begin_src go <<Bridge to C>>=
+  /*
+  //<<Cgo>>
+  //<<Includes>>
+  */
+  import "C"
+#+end_src
+#+begin_src latex
+  There is only one \texttt{cgo} instruction, a linker flag refering to
+  the 64-bit version of the divsufsort library.
+#+end_src
+#+begin_src go <<Cgo>>=
+  #cgo LDFLAGS: -ldivsufsort64
+#+end_src
+#+begin_src latex
+  We include the corresponding header.
+#+end_src
+#+begin_src go <<Includes>>=
+  #include <divsufsort64.h>
+#+end_src
+#+begin_src latex
+  \subsection{Function \texttt{Sa}}
+  !\texttt{Sa} takes as argument a text as byte slice and returns the
+  !corresponding suffix array.
+#+end_src
+#+begin_src go <<Functions>>=
+  func Sa(t []byte) []int64 {
+	  var sa []int64
+	  //<<Compute suffix array>>
+	  return sa
+  }
+#+end_src
+#+begin_src latex
+  The prototype of the library call for suffix array construction is
+  \begin{verbatim}
+  saint_t
+  divsufsort64(const sauchar_t *t, saidx64_t *sa, saidx64_t n);
+  \end{verbatim}
+  where \ty{t} is the text of length \texttt{n}, and \texttt{sa} its
+  suffix array. The function returns 0 upon success, -1 or -2
+  otherwise. To use it, we convert the text to C, allocate space for the
+  suffix array in C, and convert the text length to C. Then we call
+  \texttt{divsufsort64} with these three arguments, and convert the
+  result back to Go.
+#+end_src
+#+begin_src go <<Compute suffix array>>=
+  //<<Convert text>>
+  //<<Allocate suffix array>>
+  //<<Convert text length>>
+  //<<Call \texttt{divsufsort}>>
+  //<<Convert result>>
+#+end_src
+#+begin_src latex
+  To convert the text byte slice into a pointer to \texttt{char}, we
+  obtain the slice header and convert its data portion using the types
+  listed in the prototype of \texttt{divsufsort64}.
+#+end_src
+#+begin_src go <<Convert text>>=
+  header := (*reflect.SliceHeader)(unsafe.Pointer(&t))
+  ct := (*C.sauchar_t)(unsafe.Pointer(header.Data))
+#+end_src
+#+begin_src latex
+  We import \texttt{reflect} and \texttt{unsafe}.
+#+end_src
+#+begin_src go <<Imports>>=
+  "reflect"
+  "unsafe"
+#+end_src
+#+begin_src latex
+  We allocate the suffix array by calling \texttt{malloc} of the
+  standard C library.
+#+end_src
+#+begin_src go <<Allocate suffix array>>=
+  n := len(t)
+  csa := (*C.saidx64_t)(C.malloc(C.size_t(n * C.sizeof_saidx64_t)))
+#+end_src
+#+begin_src latex
+  We include the header of the C standard library.
+#+end_src
+#+begin_src go <<Includes>>=
+  #include <stdlib.h>
+#+end_src
+#+begin_src latex
+  We cast the text length to its C equivalent.
+#+end_src
+#+begin_src go <<Convert text length>>=
+  cn := C.saidx64_t(n)
+#+end_src
+#+begin_src latex
+  If \texttt{divsufsort} returns an error, we abort with an error
+  message.
+#+end_src
+#+begin_src go <<Call \texttt{divsufsort}>>=
+  err := int(C.divsufsort64(ct, csa, cn))
+  if err != 0 {
+	  log.Fatalf("divsufsort failed with code %d\n", err)
+  }
+#+end_src
+#+begin_src latex
+  We import \texttt{log}.
+#+end_src
+#+begin_src go <<Imports>>=
+  "log"
+#+end_src 
+#+begin_src latex
+  To convert the C suffix array, \texttt{csa}, back to the integer slice
+  promised, we access the header of \texttt{sa} and cast \texttt{csa} to
+  its Go equivalent.
+#+end_src
+#+begin_src go <<Convert result>>=
+  header = (*reflect.SliceHeader)((unsafe.Pointer(&sa)))
+  header.Cap = n
+  header.Len = n
+  header.Data = uintptr(unsafe.Pointer(csa))
+#+end_src
+#+begin_src latex
+  \subsection{Function \texttt{Lcp}}
+  !\texttt{Lcp} takes as argument a text and its suffix array, and
+  !returns the lcp array.
+  The implementation is based on Algorithm~\ref{alg:lcp}, which runs in
+  time linear in the length of the text. The algorithm proceeds in two
+  phases, computation of the inverse suffix array, $\mbox{isa}$ (lines 1--3), which
+  is then used for the computation of the $\mbox{lcp}$ array (lines
+  6--16). In between, we initialize the $\mbox{lcp}$ array and the
+  length of the last common prefix found, $\ell$ (lines 4 \& 5).
+  \begin{algorithm}
+    \caption{Algorithm for linear-time computation of $\mbox{lcp}$
+      array~\cite{kas01:lin}.}\label{alg:lcp}
+    \begin{algorithmic}[1]
+      \input{lcpAlg}
+    \end{algorithmic}
+  \end{algorithm}
+#+end_src
+#+begin_src go <<Functions>>=
+  func Lcp(t []byte, sa []int64) []int64 {
+	  n := int64(len(t))
+	  lcp := make([]int64, n)
+	  //<<Compute inverse suffix array>>
+	  //<<Initialize variables>>
+	  //<<Fill $\mbox{lcp}$ array>>
+	  return lcp
+  }
+#+end_src
+#+begin_src latex
+  The inverse suffix array is computed by transcribing lines 1--3 of
+  Algorithm~\ref{alg:lcp}.
+#+end_src
+#+begin_src go <<Compute inverse suffix array>>=
+  var i int64
+  isa := make([]int64, n)
+  for i = 0; i < n; i++ {
+	  isa[sa[i]] = i
+  }
+#+end_src
+#+begin_src latex
+  We initialize the $\mbox{lcp}$ array and $\ell$.
+#+end_src
+#+begin_src go <<Initialize variables>>=
+  lcp[0] = int64(-1)
+  var l int64
+#+end_src
+#+begin_src latex
+  We transcribe lines 6--16 of Algorithm~\ref{alg:lcp} to fill the
+  $\mbox{lcp}$ array.
+#+end_src
+#+begin_src go <<Fill $\mbox{lcp}$ array>>=
+  for i = 0; i < n; i++ {
+	  j := isa[i]
+	  if j == 0 { continue }
+	  k := sa[j - 1]
+	  for k+l < n && i+l < n && t[k+l] == t[i+l] { l++ }
+	  lcp[j] = l
+	  l -= 1
+	  if l < 0 { l = 0 }
+  }
+#+end_src
+#+begin_src latex
+  \section{Testing}
+  The testing outline contains hooks for imports and the testing logic.
+#+end_src
+#+begin_src go <<esa_test.go>>=
+  package esa
+
+  import (
+	  "testing"
+	  //<<Testing imports>>
+  )
+  func TestEsa(t *testing.T) {
+	  //<<Testing>>
+  }
+#+end_src
+#+begin_src latex
+  We compute a small suffix array and the corresponding $\mbox{lcp}$
+  array, and compare what we get to what we want.
+#+end_src
+#+begin_src go <<Testing>>=
+  //<<Compute small suffix array>>
+  //<<Compute $\mbox{lcp}$ array>>
+  //<<Compare results>>
+#+end_src
+#+begin_src latex
+  Our testing text is \texttt{abracadabra}.
+#+end_src
+#+begin_src go <<Compute small suffix array>>=
+text := []byte("abracadabra")
+sa := Sa(text)
+#+end_src
+#+begin_src latex
+  Similarly, getting the $\mbox{lcp}$ array is just one function call.
+#+end_src
+#+begin_src go <<Compute $\mbox{lcp}$ array>>=
+  lcp := Lcp(text, sa)
+#+end_src
+#+begin_src latex
+  To compare the results, we write what we get and read from file what
+  we want.
+#+end_src
+#+begin_src go <<Compare results>>=
+  var get, want []byte
+  //<<Write what we get>>
+  //<<Read what we want>>
+  if !bytes.Equal(want, get) {
+	  t.Errorf("want:\n%s\nget:\n%s\n", want, get)
+  }
+#+end_src
+#+begin_src latex
+  We import \texttt{bytes}.
+#+end_src
+#+begin_src go <<Testing imports>>=
+  "bytes"
+#+end_src
+#+begin_src latex
+  We write the results we get to a buffer.
+#+end_src
+#+begin_src go <<Write what we get>>=
+w := new(bytes.Buffer)
+for i, s := range sa {
+	fmt.Fprintf(w, "%d\t%d\t%d\t%s\n",
+		i, s, lcp[i], text[s:])
+}
+get = w.Bytes()
+#+end_src
+#+begin_src latex
+  We import \texttt{fmt}.
+#+end_src
+#+begin_src go <<Testing imports>>=
+  "fmt"
+#+end_src
+#+begin_src latex
+  The results we want are contained in \texttt{r1.txt}.
+#+end_src
+#+begin_src go <<Read what we want>>=
+  want, err := ioutil.ReadFile("r1.txt")
+  if err != nil {
+	  t.Errorf("couldn't read r1.txt\n")
+  }
+#+end_src
+#+begin_src latex
+  We import \texttt{ioutil}.
+#+end_src
+#+begin_src go <<Testing imports>>=
+  "io/ioutil"
+#+end_src
