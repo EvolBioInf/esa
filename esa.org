@@ -1,7 +1,7 @@
 #+begin_src latex
   \section{Introduction}
   Consider the text $t=\texttt{abracadabra}$ and think for a moment of
-  sorcerers, or the eponymous song by the Steve Miller band. For it is
+  sorcerers, or the eponymous song by the Steve Miller Band. For it is
   almost magical what we can do when we rearrange $t$. For example,
   let's search it for a pattern like $p=\texttt{abra}$. You might think
   that in the best case this takes time proportional to the length of
@@ -200,9 +200,11 @@
   header.Data = uintptr(unsafe.Pointer(csa))
 #+end_src
 #+begin_src latex
-  \subsection{Function \texttt{Lcp}}
+  \subsection{Function \texttt{LcpIsa}}
   !\texttt{Lcp} takes as argument a text and its suffix array, and
-  !returns the lcp array.
+  !returns the longest common prefix array, lcp, and the inverse suffix
+  !array, isa.
+
   The implementation is based on Algorithm~\ref{alg:lcp}, which runs in
   time linear in the length of the text. The algorithm proceeds in two
   phases, computation of the inverse suffix array, $\mbox{isa}$ (lines 1--3), which
@@ -218,13 +220,14 @@
   \end{algorithm}
 #+end_src
 #+begin_src go <<Functions>>=
-  func Lcp(t []byte, sa []int64) []int64 {
+  func LcpIsa(t []byte, sa []int64) ([]int64, []int64) {
 	  n := int64(len(t))
 	  lcp := make([]int64, n)
+	  isa := make([]int64, n)
 	  //<<Compute inverse suffix array>>
 	  //<<Initialize variables>>
 	  //<<Fill $\mbox{lcp}$ array>>
-	  return lcp
+	  return lcp, isa
   }
 #+end_src
 #+begin_src latex
@@ -233,7 +236,6 @@
 #+end_src
 #+begin_src go <<Compute inverse suffix array>>=
   var i int64
-  isa := make([]int64, n)
   for i = 0; i < n; i++ {
 	  isa[sa[i]] = i
   }
@@ -292,10 +294,12 @@ text := []byte("abracadabra")
 sa := Sa(text)
 #+end_src
 #+begin_src latex
-  Similarly, getting the $\mbox{lcp}$ array is just one function call.
+  Similarly, getting the $\mbox{lcp}$ array is just one function
+  call. Since the correctness of the $\mbox{lcp}$ array depends on the
+  $\mbox{isa}$ array, we only check the $\mbox{lcp}$ array.
 #+end_src
 #+begin_src go <<Compute $\mbox{lcp}$ array>>=
-  lcp := Lcp(text, sa)
+  lcp, _ := LcpIsa(text, sa)
 #+end_src
 #+begin_src latex
   To compare the results, we write what we get and read from file what
