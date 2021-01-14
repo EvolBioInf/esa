@@ -93,7 +93,8 @@
 #+end_src
 #+begin_src latex
   There is only one \texttt{cgo} instruction, a linker flag refering to
-  the 64-bit version of the divsufsort library.
+  the 64-bit version of the divsufsort library. This means we assume we
+  are working on a 64 bit machine.
 #+end_src
 #+begin_src go <<Cgo>>=
   #cgo LDFLAGS: -ldivsufsort64
@@ -110,8 +111,8 @@
   !corresponding suffix array.
 #+end_src
 #+begin_src go <<Functions>>=
-  func Sa(t []byte) []int64 {
-	  var sa []int64
+  func Sa(t []byte) []int {
+	  var sa []int
 	  //<<Compute suffix array>>
 	  return sa
   }
@@ -220,10 +221,10 @@
   \end{algorithm}
 #+end_src
 #+begin_src go <<Functions>>=
-  func LcpIsa(t []byte, sa []int64) ([]int64, []int64) {
-	  n := int64(len(t))
-	  lcp := make([]int64, n)
-	  isa := make([]int64, n)
+  func LcpIsa(t []byte, sa []int) ([]int, []int) {
+	  n := len(t)
+	  lcp := make([]int, n)
+	  isa := make([]int, n)
 	  //<<Compute inverse suffix array>>
 	  //<<Initialize variables>>
 	  //<<Fill $\mbox{lcp}$ array>>
@@ -235,8 +236,7 @@
   Algorithm~\ref{alg:lcp}.
 #+end_src
 #+begin_src go <<Compute inverse suffix array>>=
-  var i int64
-  for i = 0; i < n; i++ {
+  for i := 0; i < n; i++ {
 	  isa[sa[i]] = i
   }
 #+end_src
@@ -244,15 +244,15 @@
   We initialize the $\mbox{lcp}$ array and $\ell$.
 #+end_src
 #+begin_src go <<Initialize variables>>=
-  lcp[0] = int64(-1)
-  var l int64
+  lcp[0] = -1
+  l := 0
 #+end_src
 #+begin_src latex
   We transcribe lines 6--16 of Algorithm~\ref{alg:lcp} to fill the
   $\mbox{lcp}$ array.
 #+end_src
 #+begin_src go <<Fill $\mbox{lcp}$ array>>=
-  for i = 0; i < n; i++ {
+  for i := 0; i < n; i++ {
 	  j := isa[i]
 	  if j == 0 { continue }
 	  k := sa[j - 1]
