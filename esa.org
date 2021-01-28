@@ -201,10 +201,9 @@
   header.Data = uintptr(unsafe.Pointer(csa))
 #+end_src
 #+begin_src latex
-  \subsection{Function \texttt{LcpIsa}}
+  \subsection{Function \texttt{Lcp}}
   !\texttt{Lcp} takes as argument a text and its suffix array, and
-  !returns the longest common prefix array, lcp, and the inverse suffix
-  !array, isa.
+  !returns the longest common prefix array, lcp.
 
   The implementation is based on Algorithm~\ref{alg:lcp}, which runs in
   time linear in the length of the text. The algorithm proceeds in two
@@ -221,14 +220,14 @@
   \end{algorithm}
 #+end_src
 #+begin_src go <<Functions>>=
-  func LcpIsa(t []byte, sa []int) ([]int, []int) {
+  func Lcp(t []byte, sa []int) []int {
 	  n := len(t)
 	  lcp := make([]int, n)
 	  isa := make([]int, n)
 	  //<<Compute inverse suffix array>>
 	  //<<Initialize variables>>
 	  //<<Fill $\mbox{lcp}$ array>>
-	  return lcp, isa
+	  return lcp
   }
 #+end_src
 #+begin_src latex
@@ -295,11 +294,10 @@ sa := Sa(text)
 #+end_src
 #+begin_src latex
   Similarly, getting the $\mbox{lcp}$ array is just one function
-  call. Since the correctness of the $\mbox{lcp}$ array depends on the
-  $\mbox{isa}$ array, we only check the $\mbox{lcp}$ array.
+  call.
 #+end_src
 #+begin_src go <<Compute $\mbox{lcp}$ array>>=
-  lcp, _ := LcpIsa(text, sa)
+  lcp := Lcp(text, sa)
 #+end_src
 #+begin_src latex
   To compare the results, we write what we get and read from file what
