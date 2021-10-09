@@ -1,4 +1,5 @@
 *.go
+!esa.go
 doc/*.aux
 doc/*.dvi
 doc/*.log
