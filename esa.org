@@ -94,10 +94,11 @@
 #+begin_src latex
   There is only one \texttt{cgo} instruction, a linker flag refering to
   the 64-bit version of the divsufsort library. This means we assume we
-  are working on a 64 bit machine.
+  are working on a 64 bit machine. We also accommodate homebrew on macOS.
 #+end_src
 #+begin_src go <<Cgo>>=
-  #cgo LDFLAGS: -ldivsufsort64
+  #cgo LDFLAGS: -ldivsufsort64 -L/opt/homebrew/lib
+  #cgo CFLAGS: -I/opt/homebrew/include
 #+end_src
 #+begin_src latex
   We include the corresponding header.

@@ -1,7 +1,8 @@
 package esa
 
 /*
-#cgo LDFLAGS: -ldivsufsort64
+#cgo LDFLAGS: -ldivsufsort64 -L/opt/homebrew/lib
+#cgo CFLAGS: -I/opt/homebrew/include
 #include <divsufsort64.h>
 #include <stdlib.h>
 */
