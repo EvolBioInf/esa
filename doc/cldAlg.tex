@@ -1,0 +1,22 @@
+\REQUIRE $n$ \COMMENT{length of text}
+\REQUIRE $\mathrm{lcp}$ \COMMENT{longest common prefix array}
+\ENSURE $\mathrm{cld}$ \COMMENT{child array}
+
+\STATE{$\mathrm{cld}[1]\leftarrow n+1$}
+\STATE{$\mathrm{push}(\langle 1, -1\rangle)$}
+
+\FOR{$i\leftarrow 2$ to $n+1$}
+  \WHILE{$\mathrm{lcp}[i] < \mathrm{top}().\mathrm{lcp}$}
+    \STATE{$\mathrm{last}\leftarrow\mathrm{pop}()$}
+    \WHILE{$\mathrm{top}().\mathrm{lcp} = \mathrm{last}.\mathrm{lcp}$}
+      \STATE{$\mathrm{cld}[\mathrm{top}().\mathrm{idx}]\leftarrow\mathrm{last}.\mathrm{idx}$}
+      \STATE{$\mathrm{last}\leftarrow\mathrm{pop}()$}
+    \ENDWHILE
+    \IF{$\mathrm{lcp}[i]<\mathrm{top}().\mathrm{lcp}$}
+      \STATE{$\mathrm{cld}[\mathrm{top}().\mathrm{idx}]\leftarrow\mathrm{last}.\mathrm{idx}$}
+    \ELSE
+      \STATE{$\mathrm{cld}[i-1]\leftarrow\mathrm{last}.\mathrm{idx}$}
+    \ENDIF
+  \ENDWHILE
+  \STATE{$\mathrm{push}(\langle i, \mathrm{lcp}[i]\rangle)$}
+\ENDFOR

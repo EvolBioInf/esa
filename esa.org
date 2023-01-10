@@ -10,34 +10,44 @@
   and $p$ is a PCR primer of 20 nucleotides, searching in time
   proportional to the length of $p$ rather than $t$ might make a huge
   difference. The data structure that makes this feat possible is
-  called a \emph{suffix tree}~\cite{gus97:alg}. Its simpler sibling is
-  the \emph{suffix array}, which starts from the suffixes of $t$ listed
-  in Table~\ref{tab:suf}.
-  \begin{table}
-    \caption{The suffixes of text $t=\texttt{abracadabra}$.}\label{tab:suf}
+  called a \emph{suffix tree}~\cite{gus97:alg} shown in
+  Figure~\ref{fig:abr} for \ty{abracadabra}.
+
+  \begin{figure}
     \begin{center}
-      \begin{tabular}{cl}
-	\hline
-	$i$ & $\mbox{suf}[i]$\\\hline
-	\input{suf}\hline
+      \input{abr}
+    \end{center}
+    \caption{Suffix tree of \ty{abracadabra}.}\label{fig:abr}
+  \end{figure}
+
+  A suffix tree is usually constructed from its corresponding
+  \emph{suffix array}, which starts from the suffixes of $t$ listed in
+  Table~\ref{tab:suf}A.
+  \begin{table}
+    \caption{The suffixes of text $t=\texttt{abracadabra}$ (\textbf{A})
+      and its suffix array, $\mbox{sa}$ (\textbf{B}).}\label{tab:suf}
+    \begin{center}
+      \begin{tabular}{cc}
+	\textbf{A} & \textbf{B}\\
+	\begin{tabular}{cl}
+	  \hline
+	  $i$ & $\mbox{suf}[i]$\\\hline
+	  \input{suf}\\\hline
+	\end{tabular}
+	&
+	\begin{tabular}{ccl}
+	  \hline
+	  $i$ & $\mbox{sa}[i]$ & $\mbox{suf}[i]$\\\hline
+	  \input{sa}\\\hline
+	\end{tabular}
       \end{tabular}
     \end{center}
   \end{table}
   By sorting them alphabetically, we obtain the suffix array of $t$,
-  $\mbox{sa}$, in Table~\ref{tab:sa}. Strictly speaking, a suffix array
+  $\mbox{sa}$, in Table~\ref{tab:suf}B. Strictly speaking, a suffix array
   only consists of the array of starting positions, but explicit
   suffixes are easier to think about than their mere starting positions,
-  hence the three columns in Table~\ref{tab:sa}.
-  \begin{table}
-    \caption{Suffix array, $\mbox{sa}$, of $t=\texttt{abracadabra}$.}\label{tab:sa}
-    \begin{center}
-      \begin{tabular}{ccl}
-	\hline
-	$i$ & $\mbox{sa}[i]$ & $\mbox{suf}[i]$\\\hline
-	\input{sa}\hline
-      \end{tabular}
-    \end{center}
-  \end{table}
+  hence the three columns in Table~\ref{tab:suf}B.
 
   In the suffix array, some neighboring suffixes have matching
   prefixes. For example, the first suffix, $\mbox{sa}[1]=\texttt{a}$
@@ -46,28 +56,45 @@
   positions of its successor, $\mbox{sa}[3]=\texttt{abracadabra}$. The
   lengths of these common prefixes, also known as the \emph{longest
     common prefix}, $\mbox{lcp}$, is added to the suffix array in
-  Table~\ref{tab:esa}. The longest common prefix array is said to
+  Table~\ref{tab:esa}A. The longest common prefix array is said to
   \emph{enhance} the underlying suffix array, because the combination of
   suffix array and $\mbox{lcp}$ array can be used to implement suffix trees
   with their near magical search properties~\cite{abo02:enh}.
+
+  An additional data structure for getting from suffix array to suffix
+  tree is the child
+  array~\cite[Sec. 4.4.4]{ohl13:bio}. Table~\ref{tab:esa}B shows the
+  suffix array enhanced by the $\mbox{lcp}$ array and the child array,
+  $\mbox{cld}$.
   \begin{table}
-    \caption{Enhanced suffix array of $t=\texttt{abracadabra}$.}\label{tab:esa}
+    \caption{Suffix array of $t=\texttt{abracadabra}$ enhanced by the
+      $\mbox{lcp}$ array (\textbf{A}), and, additionally, by the child
+      array, $\mbox{cld}$ (\textbf{B}).}\label{tab:esa}
     \begin{center}
-      \begin{tabular}{cccl}
-	\hline
-	$i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{suf}[i]$\\\hline
-	\input{esaTab}\hline
+      \begin{tabular}{cc}
+	\textbf{A} & \textbf{B}\\
+	\begin{tabular}{cccl}
+	  \hline
+	  $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{suf}[i]$\\\hline
+	  \input{esaTab}\\\hline
+	\end{tabular}
+	&
+	\begin{tabular}{ccccl}
+	  \hline
+	  $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{cld}[i]$ & $\mbox{suf}[i]$\\\hline
+	  \input{esaTab2}\\\hline
+	\end{tabular}
       \end{tabular}
     \end{center}
   \end{table}
-  !Package \texttt{esa} provides functionsf or the computation of
+  !Package \texttt{esa} provides functions for the computation of
   !suffix arrays and related data structures. It is based on Yuta Mori's
   !highly optimized divsufsort library published at
   !\texttt{https://github.com/y-256/libdivsufsort}
   \section{Implementation}
   The divsufsort library is written in C, so our package outline
   contains hooks for bridging the gap between Go and C, as well as for
-  imports and functions.
+  imports, types, methods, and functions.
 #+end_src
 #+begin_src go <<esa.go>>=
   package esa
@@ -75,6 +102,8 @@
   import (
 	  //<<Imports>>
   )
+  //<<Types>>
+  //<<Methods>>
   //<<Functions>>
 #+end_src
 #+begin_src latex
@@ -213,7 +242,7 @@
   6--16). In between, we initialize the $\mbox{lcp}$ array and the
   length of the last common prefix found, $\ell$ (lines 4 \& 5).
   \begin{algorithm}
-    \caption{Algorithm for linear-time computation of $\mbox{lcp}$
+    \caption{Linear-time computation of $\mbox{lcp}$
       array~\cite{kas01:lin}.}\label{alg:lcp}
     \begin{algorithmic}[1]
       \input{lcpAlg}
@@ -263,6 +292,141 @@
   }
 #+end_src
 #+begin_src latex
+  \section{Function \ty{Cld}}
+  !\texttt{Cld} takes an lcp array as input and returns the
+  !corresponding child array.
+
+  \ty{Cld} implements Algorithm~\ref{alg:cld} with his space-saving
+  notation that $\mbox{cld}[i].r\equiv\mbox{cld}[i]$ and
+  $\mbox{cld}[i].l\equiv\mbox{cld}[i-1]$~\cite[p. 109f]{ohl13:bio}.
+
+  \begin{algorithm}
+    \caption{Computation of child table~\cite[p. 109f]{ohl13:bio}.}\label{alg:cld}
+    \begin{algorithmic}[1]
+      \input{cldAlg}
+    \end{algorithmic}
+  \end{algorithm}
+
+  The child array is based on the lcp interval with a stop entry
+  appended. We first construct and initialize the child array. Then we
+  construct and initialize the stack of tree intervals. Then we iterate
+  over the child array to fill it. Finally, we remove the stop entry
+  from the lcp array.
+#+end_src
+#+begin_src go <<Functions>>=
+  func Cld(lcp []int) []int {
+	  var cld []int
+	  lcp = append(lcp, -1)
+	  //<<Construct and initialize child array>>
+	  //<<Construct and initialize interval stack>>
+	  //<<Iterate over child array>>
+	  lcp = lcp[:len(lcp)-1]
+	  return cld
+  }
+#+end_src
+#+begin_src latex
+  The central parameter of the algorithm, $n$, is the length of the
+  input text, which is one less than the length of the given lcp
+  array. Given $n$, we construct the child array of length $n+1$ and
+  initialize its first entry to $n$.
+#+end_src
+#+begin_src go <<Construct and initialize child array>>=
+  n := len(lcp) - 1
+  cld = make([]int, n + 1)
+  cld[0] = n
+#+end_src
+#+begin_src latex
+  To prepare the construction of the interval stack, we declare it as a
+  slice of pointers to intervals. Then we declare a tree interval as
+  consisting of its start index and its lcp value.
+#+end_src
+#+begin_src go <<Types>>=
+  type Stack []*Interval
+  type Interval struct {
+	  Idx int
+	  Lcp int
+  }
+#+end_src
+#+begin_src latex
+  Our stack of intervals has the usual stack methods, \ty{Top},
+  \ty{Pop}, and \ty{Push}.
+#+end_src
+#+begin_src go <<Methods>>=
+  func (s *Stack) Top() *Interval {
+	  return (*s)[len(*s) - 1]
+  }
+  func (s *Stack) Pop() *Interval {
+	  i := (*s)[len(*s) - 1]
+	  (*s) = (*s)[0:len(*s) - 1]
+	  return i
+  }
+  func (s *Stack) Push(i *Interval) {
+	  (*s) = append(*s, i)
+  }
+#+end_src
+#+begin_src latex
+  Having declared our stack type, we can now construct an actual
+  stack. We initialize it with the root interval, which we construct
+  using a call to \ty{newInterval}.
+#+end_src
+#+begin_src go <<Construct and initialize interval stack>>=
+  stack := new(Stack)
+  iv := newInterval(0, -1)
+  stack.Push(iv)
+#+end_src
+#+begin_src latex
+  The function \ty{newInterval} takes as arguments the index and the lcp
+  value of the interval and returns a pointer to the newly minted interval.
+#+end_src
+#+begin_src go <<Functions>>=
+  func newInterval(i, l int) *Interval {
+	  iv := new(Interval)
+	  iv.Idx = i
+	  iv.Lcp = l
+	  return iv
+  }
+#+end_src
+#+begin_src latex
+  We iterate over the child array, search for the next tree interval,
+  and push it on the stack.
+#+end_src
+#+begin_src go <<Iterate over child array>>=
+  for i := 1; i <= n; i++ {
+	  top := stack.Top()
+	  //<<Find next interval>>
+	  iv = newInterval(i, lcp[i])
+	  stack.Push(iv)
+  }
+#+end_src
+#+begin_src latex
+  While looking for the next interval, we fill the child array.
+#+end_src
+#+begin_src go <<Find next interval>>=
+  for lcp[i] < top.Lcp {
+	  last := stack.Pop()
+	  top = stack.Top()
+	  //<<Fill child array>>
+  }
+#+end_src
+#+begin_src latex
+  First we fill the right entries of the child array for intervals with
+  identical string depths. The last interval we reach, either refers to
+  a right child or a left child.
+#+end_src
+#+begin_src go <<Fill child array>>=
+  for top.Lcp == last.Lcp {
+	  cld[top.Idx] = last.Idx
+	  last = stack.Pop()
+	  top = stack.Top()
+  }
+  top = stack.Top()
+  if lcp[i] < top.Lcp {
+	  cld[top.Idx] = last.Idx
+  } else {
+	  cld[i - 1] = last.Idx
+  }
+#+end_src
+#+begin_src latex
   \section{Testing}
   The testing outline contains hooks for imports and the testing logic.
 #+end_src
@@ -278,20 +442,21 @@
   }
 #+end_src
 #+begin_src latex
-  We compute a small suffix array and the corresponding $\mbox{lcp}$
-  array, and compare what we get to what we want.
+  We compute a small suffix array and the corresponding $\mbox{lcp}$ and cld
+  arrays. Then we compare what we get to what we want.
 #+end_src
 #+begin_src go <<Testing>>=
   //<<Compute small suffix array>>
   //<<Compute $\mbox{lcp}$ array>>
+  //<<Compute cld array>>
   //<<Compare results>>
 #+end_src
 #+begin_src latex
   Our testing text is \texttt{abracadabra}.
 #+end_src
 #+begin_src go <<Compute small suffix array>>=
-text := []byte("abracadabra")
-sa := Sa(text)
+  text := []byte("abracadabra")
+  sa := Sa(text)
 #+end_src
 #+begin_src latex
   Similarly, getting the $\mbox{lcp}$ array is just one function
@@ -299,6 +464,13 @@ sa := Sa(text)
 #+end_src
 #+begin_src go <<Compute $\mbox{lcp}$ array>>=
   lcp := Lcp(text, sa)
+#+end_src
+#+begin_src latex
+  We compute the cld array from the lcp array using another function
+  call.
+#+end_src
+#+begin_src go <<Compute cld array>>=
+  cld := Cld(lcp)
 #+end_src
 #+begin_src latex
   To compare the results, we write what we get and read from file what
@@ -322,12 +494,12 @@ sa := Sa(text)
   We write the results we get to a buffer.
 #+end_src
 #+begin_src go <<Write what we get>>=
-w := new(bytes.Buffer)
-for i, s := range sa {
-	fmt.Fprintf(w, "%d\t%d\t%d\t%s\n",
-		i, s, lcp[i], text[s:])
-}
-get = w.Bytes()
+  w := new(bytes.Buffer)
+  for i, s := range sa {
+	  fmt.Fprintf(w, "%d\t%d\t%d\t%d\t%s\n",
+		  i, s, lcp[i], cld[i], text[s:])
+  }
+  get = w.Bytes()
 #+end_src
 #+begin_src latex
   We import \texttt{fmt}.
