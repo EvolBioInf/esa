@@ -1,0 +1,24 @@
+\REQUIRE{$[i..j]$} \COMMENT{parent interval}
+\REQUIRE{$c$} \COMMENT{first character of edge label of sought child interval}
+\REQUIRE{$\mbox{sa}, \mbox{lcp}, \mbox{cld}$} \COMMENT{enhanced suffix array}
+\REQUIRE{$t$} \COMMENT{text}
+
+\ENSURE{$[x..y]$} \COMMENT{Child interval}
+
+\STATE{$k\leftarrow i$}
+\IF{$\mbox{lcp}[i]\le\mbox{lcp}[j+1]$}
+\STATE{$m\leftarrow\mbox{cld}[j+1].l$} \COMMENT{stored as $\mbox{cld}[j]$}
+\ELSE
+\STATE{$m\leftarrow\mbox{cld}[i].r$} \COMMENT{stored as $\mbox{cld}[i]$}
+\ENDIF
+\STATE{$l\leftarrow\mbox{lcp}[m]$}
+\WHILE{$\mbox{lcp}[m]=l$}
+\IF{$t[\mbox{sa}[k]+l]=c$}
+\STATE{return $[k..m-1]$}
+\ENDIF
+\STATE{$k\leftarrow m$}
+\STATE{$m\leftarrow\mbox{cld}[m].r$} \COMMENT{stored as $\mbox{cld}[m]$}
+\ENDWHILE
+\IF{$t[\mbox{sa}[k]+l] = c$}
+\STATE{return $[k..j]$}
+\ENDIF

@@ -61,37 +61,59 @@
   suffix array and $\mbox{lcp}$ array can be used to implement suffix trees
   with their near magical search properties~\cite{abo02:enh}.
 
+  \begin{figure}
+    \caption{Lcp interval tree of \ty{abracadabra}.}\label{fig:abrI}
+    \begin{center}
+      \input{abrI}
+    \end{center}
+  \end{figure}
+
   An additional data structure for getting from suffix array to suffix
   tree is the child
   array~\cite[Sec. 4.4.4]{ohl13:bio}. Table~\ref{tab:esa}B shows the
   suffix array enhanced by the $\mbox{lcp}$ array and the child array,
-  $\mbox{cld}$.
+  $\mbox{cld}$. This data structure allows efficient top-down traversal
+  of the so-calle ``lcp interval tree''. Figure~\ref{fig:abrI} shows the
+  lcp interval tree of the corresponding suffix tree in
+  Figure~\ref{fig:abr}. The lcp interval tree has the topology of the
+  suffix tree when stripped of its terminal branches, leaving on only
+  the internal nodes. Given an interval in the lcp interval tree and a
+  character, the function \ty{GetInterval} returns the child interval
+  whose edge-label starts with the character. The function \ty{MatchPref}
+  takes as input a pattern and repeatedly calls \ty{GetInterval} to find
+  the longest common prefix between the text and the pattern.
   \begin{table}
     \caption{Suffix array of $t=\texttt{abracadabra}$ enhanced by the
       $\mbox{lcp}$ array (\textbf{A}), and, additionally, by the child
       array, $\mbox{cld}$ (\textbf{B}).}\label{tab:esa}
     \begin{center}
+      \newcommand{\x}{0.90}
       \begin{tabular}{cc}
 	\textbf{A} & \textbf{B}\\
-	\begin{tabular}{cccl}
-	  \hline
-	  $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{suf}[i]$\\\hline
-	  \input{esaTab}\\\hline
-	\end{tabular}
+	\scalebox{\x}{
+	  \begin{tabular}{cccl}
+	    \hline
+	    $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{suf}[i]$\\\hline
+	    \input{esaTab}\\\hline
+	  \end{tabular}
+	}
 	&
-	\begin{tabular}{ccccl}
-	  \hline
-	  $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{cld}[i]$ & $\mbox{suf}[i]$\\\hline
-	  \input{esaTab2}\\\hline
-	\end{tabular}
+	\scalebox{\x}{
+	  \begin{tabular}{ccccl}
+	    \hline
+	    $i$ & $\mbox{sa}[i]$ & $\mbox{lcp}[i]$ & $\mbox{cld}[i]$ & $\mbox{suf}[i]$\\\hline
+	    \input{esaTab2}\\\hline
+	  \end{tabular}
+	}
       \end{tabular}
     \end{center}
   \end{table}
+  \section{Implementation}
   !Package \texttt{esa} provides functions for the computation of
   !suffix arrays and related data structures. It is based on Yuta Mori's
   !highly optimized divsufsort library published at
   !\texttt{https://github.com/y-256/libdivsufsort}
-  \section{Implementation}
+
   The divsufsort library is written in C, so our package outline
   contains hooks for bridging the gap between Go and C, as well as for
   imports, types, methods, and functions.
@@ -157,8 +179,8 @@
   suffix array. The function returns 0 upon success, -1 or -2
   otherwise. To use it, we convert the text to C, allocate space for the
   suffix array in C, and convert the text length to C. Then we call
-  \texttt{divsufsort64} with these three arguments, and convert the
-  result back to Go.
+  \texttt{divsufsort64} with these three arguments, and finally convert
+  the result back to Go.
 #+end_src
 #+begin_src go <<Compute suffix array>>=
   //<<Convert text>>
@@ -292,7 +314,7 @@
   }
 #+end_src
 #+begin_src latex
-  \section{Function \ty{Cld}}
+  \subsection{Function \ty{Cld}}
   !\texttt{Cld} takes an lcp array as input and returns the
   !corresponding child array.
 
@@ -325,9 +347,8 @@
   }
 #+end_src
 #+begin_src latex
-  The central parameter of the algorithm, $n$, is the length of the
-  input text, which is one less than the length of the given lcp
-  array. Given $n$, we construct the child array of length $n+1$ and
+  The length of the input text is $n$, which is one less than the length
+  of the given lcp array. The child array has length $n+1$ and we
   initialize its first entry to $n$.
 #+end_src
 #+begin_src go <<Construct and initialize child array>>=
@@ -365,9 +386,9 @@
   }
 #+end_src
 #+begin_src latex
-  Having declared our stack type, we can now construct an actual
-  stack. We initialize it with the root interval, which we construct
-  using a call to \ty{newInterval}.
+  Having declared our stack type, we construct an actual stack. We
+  initialize it with the root interval, which we construct using a call
+  to \ty{newInterval}.
 #+end_src
 #+begin_src go <<Construct and initialize interval stack>>=
   stack := new(Stack)
@@ -376,7 +397,8 @@
 #+end_src
 #+begin_src latex
   The function \ty{newInterval} takes as arguments the index and the lcp
-  value of the interval and returns a pointer to the newly minted interval.
+  value of the interval, and returns a pointer to the newly minted
+  interval.
 #+end_src
 #+begin_src go <<Functions>>=
   func newInterval(i, l int) *Interval {
@@ -387,8 +409,8 @@
   }
 #+end_src
 #+begin_src latex
-  We iterate over the child array, search for the next tree interval,
-  and push it on the stack.
+  We iterate over the child array, searching for the next tree interval,
+  which we push on the stack.
 #+end_src
 #+begin_src go <<Iterate over child array>>=
   for i := 1; i <= n; i++ {
@@ -410,7 +432,7 @@
 #+end_src
 #+begin_src latex
   First we fill the right entries of the child array for intervals with
-  identical string depths. The last interval we reach, either refers to
+  identical string depths. The last interval we reach either refers to
   a right child or a left child.
 #+end_src
 #+begin_src go <<Fill child array>>=
@@ -424,6 +446,236 @@
 	  cld[top.Idx] = last.Idx
   } else {
 	  cld[i - 1] = last.Idx
+  }
+#+end_src
+#+begin_src latex
+  \subsection{Function \ty{MakeEsa}}
+  !\texttt{MakeEsa} takes as input a text and returns a pointer to the
+  !corresponding enhanced suffix array.
+  We append a sentinel to the text and a stop element to the lcp array.
+#+end_src
+#+begin_src go <<Functions>>=
+  func MakeEsa(t []byte) *Esa {
+	  esa := new(Esa)
+	  esa.T = t
+	  esa.T = append(esa.T, 0)
+	  esa.Sa = Sa(esa.T)
+	  esa.Lcp = Lcp(esa.T, esa.Sa)
+	  esa.Lcp = append(esa.Lcp, -1)
+	  esa.Cld = Cld(esa.Lcp)
+	  return esa
+  }
+#+end_src
+#+begin_src latex
+  \subsection{Type \ty{Esa}}
+  !\texttt{Esa} is an enhanced suffix array consisting of the underlying
+  !text, the suffix array, the longest common prefix array, and the
+  !child array.
+#+end_src
+#+begin_src go <<Types>>=
+  type Esa struct {
+	  T []byte
+	  Sa []int
+	  Lcp []int
+	  Cld []int
+  }
+#+end_src
+#+begin_src latex
+  \subsection{Method \texttt{MatchPref}}
+  !Method \texttt{MatchPref} takes as input a query sequence and returns
+  !the match with the longest prefix of the query.
+
+  I follow Algorithm 5.2 in~\cite[p. 119]{ohl13:bio}. We set the pattern
+  position, $k$, to the beginning and call the pattern length $m$. Then
+  we declare a parent and a child interval as a match interval, which is
+  yet to be implemented. The first parent interval we construct, is the
+  root of the tree. Starting from the root, we iterate over the pattern
+  and walk the tree until we return the child representing the longest
+  match.
+#+end_src
+#+begin_src go <<Methods>>=
+  func (e *Esa) MatchPref(p []byte) *Minterval {
+	  k := 0
+	  m := len(p)
+	  var parent, child *Minterval
+	  //<<Construct parent>>
+	  //<<Iterate over pattern>>
+	  child.L = k
+	  return child
+  }
+#+end_src
+#+begin_src latex
+  !A \texttt{Minterval} is a match interval. It has a beginning, an end,
+  !and a match length.
+#+end_src
+#+begin_src go <<Types>>=
+  type Minterval struct {
+	  I, J int
+	  L int
+  }
+#+end_src
+#+begin_src latex
+  At this point, the parent interval is the root of the lcp interval
+  tree and spans the full lcp array.
+#+end_src
+#+begin_src go <<Construct parent>>=
+  parent = new(Minterval)
+  parent.I = 0
+  parent.J = len(e.T) - 1
+#+end_src
+#+begin_src latex
+  We iterate over the pattern and get the child for the character at the
+  current pattern position, $k$. If this child is nil, we've run out of
+  matches. In that case, we set the parent's match length to $k$ and
+  return it. Otherwise, we initialize the length of the current path
+  label, $l$, to $m$ and determine its correct value. Having determined
+  $l$, we can match along that path label. After matching, we adjust the
+  pattern position to the length of the path label.
+#+end_src
+#+begin_src go <<Iterate over pattern>>=
+  for k < m {
+	  child = e.GetInterval(parent, p[k])
+	  if child == nil {
+		  parent.L = k
+		  return parent
+	  }
+	  l := m
+	  //<<Determine length of path label>>
+	  //<<Match path label>>
+	  k = l
+  }
+#+end_src
+#+begin_src latex
+  If the child interval is not a singleton interval, we determine the
+  length of the path label of the child array.
+#+end_src
+#+begin_src go <<Determine length of path label>>=
+  i := child.I
+  j := child.J
+  if i < j {
+	  r := 0
+	  if e.Lcp[i] <= e.Lcp[j+1] {
+		  r = e.Cld[j]
+	  } else {
+		  r = e.Cld[i]
+	  }
+	  l = min(l, e.Lcp[r])
+  }
+#+end_src
+#+begin_src latex
+  The function \ty{min} returns the smaller of two integers.
+#+end_src
+#+begin_src go <<Functions>>=
+  func min(i, j int) int {
+	  if i < j {
+		  return i
+	  }
+	  return j
+  }
+#+end_src
+#+begin_src latex
+  We walk along the path label until we run out of matches. If we find a
+  mismatch, we set the child's match length and return it.
+#+end_src
+#+begin_src go <<Match path label>>=
+  for w := k+1; w < l; w++ {
+	  if e.T[e.Sa[i]+w] != p[w] {
+		  child.L = w
+		  return child
+	  }
+  }
+#+end_src
+#+begin_src latex
+  \subsection{Method \ty{GetInterval}}
+  !Method \texttt{GetInterval} takes as input an
+  !enhanced suffix array, a match interval, and a character. It returns
+  !the interval of the suffixes starting with that character.
+  I follow Algorithm~\ref{alg:giv}, which is adapted from
+  two Algorithms, Algorithm~5.1~\cite[p. 118]{ohl13:bio} and
+  Algorithm~4.10~\cite[p. 109]{ohl13:bio}.
+
+  \begin{algorithm}
+    \caption{Get matching child interval; adapted from Algorithms 5.1 and 4.10~\cite{ohl13:bio}}\label{alg:giv}.
+    \begin{algorithmic}
+      \input{givAlg}
+    \end{algorithmic}
+  \end{algorithm}
+
+  Inside \ty{GetInterval}, we first check whether we are dealing with a
+  singleton interval. If not, we iterate over the children of the proper
+  interval and pick the matching one. By default, we don't find a
+  matching child and hence return nil.
+#+end_src
+#+begin_src go <<Functions>>=
+  func (e *Esa) GetInterval(iv *Minterval, c byte) *Minterval {
+	  i := iv.I
+	  j := iv.J
+	  if i == j {
+		  //<<Deal with singleton interval>>
+	  }
+	  //<<Deal with proper interval>>
+	  return nil
+  }
+#+end_src
+#+begin_src latex
+  For a singleton interval, we check whether it's a match, in which case
+  we return it.
+#+end_src
+#+begin_src go <<Deal with singleton interval>>=
+  if e.T[e.Sa[i]] == c {
+	  return iv
+  }
+#+end_src
+#+begin_src latex
+  A proper interval is analyzed by determining the new match length and
+  then iterating with that over the children. During the iteration a
+  match may be found, which is returned. Finally, we check the last
+  child reached.
+#+end_src
+#+begin_src go <<Deal with proper interval>>=
+  //<<Determine match length>>
+  //<<Iterate over child intervals>>
+  //<<Check last child>>
+#+end_src
+#+begin_src latex
+  The match length is looked up in the lcp array with the aid of the
+  child array.
+#+end_src
+#+begin_src go <<Determine match length>>=
+  m := 0
+  if e.Lcp[i] <= e.Lcp[j+1] {
+	  m = e.Cld[j]
+  } else {
+	  m = e.Cld[i]
+  }
+  l := e.Lcp[m]
+#+end_src
+#+begin_src latex
+  We iterate over the child intervals with the same lcp value, that is,
+  string depth. If we find a match, we return it. If we find a
+  singleton, we break from the loop.
+#+end_src
+#+begin_src go <<Iterate over child intervals>>=
+  k := i
+  for e.Lcp[m] == l {
+	  if e.T[e.Sa[k]+l] == c {
+		  iv.I = k
+		  iv.J = m - 1
+		  return iv
+	  }
+	  k = m
+	  if k == j { break }
+	  m = e.Cld[m]
+  }
+#+end_src
+#+begin_src latex
+  We check the last interval.
+#+end_src
+#+begin_src go <<Check last child>>=
+  if e.T[e.Sa[k]+l] == c {
+	  iv.I = k
+	  iv.J = j
+	  return iv
   }
 #+end_src
 #+begin_src latex
@@ -442,32 +694,33 @@
   }
 #+end_src
 #+begin_src latex
-  We compute a small suffix array and the corresponding $\mbox{lcp}$ and cld
-  arrays. Then we compare what we get to what we want.
+  We compute a small suffix array and the corresponding $\mbox{lcp}$ and
+  cld arrays. Then we compare what we get to what we want. After that,
+  we test the matching.
 #+end_src
 #+begin_src go <<Testing>>=
   //<<Compute small suffix array>>
   //<<Compute $\mbox{lcp}$ array>>
   //<<Compute cld array>>
   //<<Compare results>>
+  //<<Test Matching>>
 #+end_src
 #+begin_src latex
-  Our testing text is \texttt{abracadabra}.
+  Our testing text is \texttt{abracadabra}. We compute its suffix array
+  by calling \ty{Sa}.
 #+end_src
 #+begin_src go <<Compute small suffix array>>=
   text := []byte("abracadabra")
   sa := Sa(text)
 #+end_src
 #+begin_src latex
-  Similarly, getting the $\mbox{lcp}$ array is just one function
-  call.
+  Similarly, getting the $\mbox{lcp}$ array is just a call to \ty{Lcp}.
 #+end_src
 #+begin_src go <<Compute $\mbox{lcp}$ array>>=
   lcp := Lcp(text, sa)
 #+end_src
 #+begin_src latex
-  We compute the cld array from the lcp array using another function
-  call.
+  We compute the cld array from the lcp array by calling \ty{Cld}.
 #+end_src
 #+begin_src go <<Compute cld array>>=
   cld := Cld(lcp)
@@ -508,7 +761,7 @@
   "fmt"
 #+end_src
 #+begin_src latex
-  The results we want are contained in \texttt{r1.txt}.
+  The results we want are contained in the file \texttt{r1.txt}.
 #+end_src
 #+begin_src go <<Read what we want>>=
   want, err := ioutil.ReadFile("r1.txt")
@@ -521,4 +774,17 @@
 #+end_src
 #+begin_src go <<Testing imports>>=
   "io/ioutil"
+#+end_src
+#+begin_src latex
+  We generate an enhanced suffix array for our text and match
+  \ty{racket} against it. The result should be a match of length 3,
+  starting at a single index position, 2, in the text.
+#+end_src
+#+begin_src go <<Test Matching>>=
+  e := MakeEsa(text)
+  pattern := []byte("racket")
+  iv := e.MatchPref(pattern)
+  if iv.L != 3 || e.Sa[iv.I] != 2 || e.Sa[iv.J] != 2 {
+	  t.Errorf("couldn't match %s\n", pattern)
+  }
 #+end_src

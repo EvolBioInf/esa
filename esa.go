@@ -18,6 +18,16 @@ type Interval struct {
 	Idx int
 	Lcp int
 }
+type Esa struct {
+	T   []byte
+	Sa  []int
+	Lcp []int
+	Cld []int
+}
+type Minterval struct {
+	I, J int
+	L    int
+}
 
 func (s *Stack) Top() *Interval {
 	return (*s)[len(*s)-1]
@@ -29,6 +39,42 @@ func (s *Stack) Pop() *Interval {
 }
 func (s *Stack) Push(i *Interval) {
 	(*s) = append(*s, i)
+}
+func (e *Esa) MatchPref(p []byte) *Minterval {
+	k := 0
+	m := len(p)
+	var parent, child *Minterval
+	parent = new(Minterval)
+	parent.I = 0
+	parent.J = len(e.T) - 1
+	for k < m {
+		child = e.GetInterval(parent, p[k])
+		if child == nil {
+			parent.L = k
+			return parent
+		}
+		l := m
+		i := child.I
+		j := child.J
+		if i < j {
+			r := 0
+			if e.Lcp[i] <= e.Lcp[j+1] {
+				r = e.Cld[j]
+			} else {
+				r = e.Cld[i]
+			}
+			l = min(l, e.Lcp[r])
+		}
+		for w := k + 1; w < l; w++ {
+			if e.T[e.Sa[i]+w] != p[w] {
+				child.L = w
+				return child
+			}
+		}
+		k = l
+	}
+	child.L = k
+	return child
 }
 func Sa(t []byte) []int {
 	var sa []int
@@ -110,4 +156,55 @@ func newInterval(i, l int) *Interval {
 	iv.Idx = i
 	iv.Lcp = l
 	return iv
+}
+func MakeEsa(t []byte) *Esa {
+	esa := new(Esa)
+	esa.T = t
+	esa.T = append(esa.T, 0)
+	esa.Sa = Sa(esa.T)
+	esa.Lcp = Lcp(esa.T, esa.Sa)
+	esa.Lcp = append(esa.Lcp, -1)
+	esa.Cld = Cld(esa.Lcp)
+	return esa
+}
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
+}
+func (e *Esa) GetInterval(iv *Minterval, c byte) *Minterval {
+	i := iv.I
+	j := iv.J
+	if i == j {
+		if e.T[e.Sa[i]] == c {
+			return iv
+		}
+	}
+	m := 0
+	if e.Lcp[i] <= e.Lcp[j+1] {
+		m = e.Cld[j]
+	} else {
+		m = e.Cld[i]
+	}
+	l := e.Lcp[m]
+	k := i
+	for e.Lcp[m] == l {
+		if e.T[e.Sa[k]+l] == c {
+			iv.I = k
+			iv.J = m - 1
+			return iv
+		}
+		k = m
+		if k == j {
+			break
+		}
+		m = e.Cld[m]
+	}
+	if e.T[e.Sa[k]+l] == c {
+		iv.I = k
+		iv.J = j
+		return iv
+	}
+	return nil
 }
