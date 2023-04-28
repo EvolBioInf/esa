@@ -243,7 +243,7 @@
 #+end_src 
 #+begin_src latex
   To convert the C suffix array, \texttt{csa}, back to the integer slice
-  promised, we construct a dummy variable, \ty{dum}, access its header
+  promised, we construct a dummy variable, \ty{dum}, access its header,
   and cast \ty{csa} to its Go equivalent. Then we allocate \ty{sa}, copy
   \ty{dum} to \ty{sa}, and free \ty{csa}. At this point \ty{dum}
   shouldn't be deferenced any more, so we set it to nil, just to make
