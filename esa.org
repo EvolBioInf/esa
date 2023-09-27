@@ -243,22 +243,14 @@
 #+end_src 
 #+begin_src latex
   To convert the C suffix array, \texttt{csa}, back to the integer slice
-  promised, we construct a dummy variable, \ty{dum}, access its header,
-  and cast \ty{csa} to its Go equivalent. Then we allocate \ty{sa}, copy
-  \ty{dum} to \ty{sa}, and free \ty{csa}. At this point \ty{dum}
-  shouldn't be deferenced any more, so we set it to nil, just to make
-  sure.
+  promised, we access the header of \ty{sa} and cast \ty{csa} to its Go
+  equivalent.
 #+end_src
 #+begin_src go <<Convert result>>=
-  var dum []int
-  header = (*reflect.SliceHeader)((unsafe.Pointer(&dum)))
+  header = (*reflect.SliceHeader)((unsafe.Pointer(&sa)))
   header.Cap = n
   header.Len = n
   header.Data = uintptr(unsafe.Pointer(csa))
-  sa = make([]int, n)
-  copy(sa, dum)
-  C.free(unsafe.Pointer(csa))
-  dum = nil
 #+end_src
 #+begin_src latex
   \subsection{Function \texttt{Lcp}}

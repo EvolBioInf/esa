@@ -87,15 +87,10 @@ func Sa(t []byte) []int {
 	if err != 0 {
 		log.Fatalf("divsufsort failed with code %d\n", err)
 	}
-	var dum []int
-	header = (*reflect.SliceHeader)((unsafe.Pointer(&dum)))
+	header = (*reflect.SliceHeader)((unsafe.Pointer(&sa)))
 	header.Cap = n
 	header.Len = n
 	header.Data = uintptr(unsafe.Pointer(csa))
-	sa = make([]int, n)
-	copy(sa, dum)
-	C.free(unsafe.Pointer(csa))
-	dum = nil
 	return sa
 }
 func Lcp(t []byte, sa []int) []int {
