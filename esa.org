@@ -70,18 +70,19 @@
 
   An additional data structure for getting from suffix array to suffix
   tree is the child
-  array~\cite[Sec. 4.4.4]{ohl13:bio}. Table~\ref{tab:esa}B shows the
+  array~\cite[Sec. 4.3.4]{ohl13:bio}. Table~\ref{tab:esa}B shows the
   suffix array enhanced by the $\mbox{lcp}$ array and the child array,
   $\mbox{cld}$. This data structure allows efficient top-down traversal
-  of the so-calle ``lcp interval tree''. Figure~\ref{fig:abrI} shows the
-  lcp interval tree of the corresponding suffix tree in
+  of the so-called ``lcp interval tree''. Figure~\ref{fig:abrI} shows
+  the lcp interval tree of the corresponding suffix tree in
   Figure~\ref{fig:abr}. The lcp interval tree has the topology of the
-  suffix tree when stripped of its terminal branches, leaving on only
-  the internal nodes. Given an interval in the lcp interval tree and a
+  suffix tree when stripped of its terminal branches, leaving only the
+  internal nodes. Given an interval in the lcp interval tree and a
   character, the function \ty{GetInterval} returns the child interval
-  whose edge-label starts with the character. The function \ty{MatchPref}
-  takes as input a pattern and repeatedly calls \ty{GetInterval} to find
-  the longest common prefix between the text and the pattern.
+  whose edge-label starts with the character. The function
+  \ty{MatchPref} takes as input a pattern and repeatedly calls
+  \ty{GetInterval} to find the longest common prefix between the text
+  and the pattern.
   \begin{table}
     \caption{Suffix array of $t=\texttt{abracadabra}$ enhanced by the
       $\mbox{lcp}$ array (\textbf{A}), and, additionally, by the child
