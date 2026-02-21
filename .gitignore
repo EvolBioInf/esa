@@ -7,6 +7,6 @@ doc/*.pdf
 doc/*.toc
 doc/*.bbl
 doc/*.blg
-doc/esaDoc.ps
+doc/*.out
 doc/esa.tex
 experiments
